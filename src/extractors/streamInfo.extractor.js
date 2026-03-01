@@ -59,7 +59,26 @@ async function extractStreamingInfo(id, name, type, fallback) {
       type,
       fallback
     );
-    return { streamingLink, servers };
+
+    if (!streamingLink) {
+      return { streamingLink: [], servers };
+    }
+
+    return {
+      streamingLink: [
+        {
+          link: streamingLink.link.file,
+          type: streamingLink.link.type,
+          server: streamingLink.server,
+          iframe: streamingLink.iframe,
+        },
+      ],
+      tracks: streamingLink.tracks,
+      intro: streamingLink.intro,
+      outro: streamingLink.outro,
+      server: streamingLink.server,
+      servers,
+    };
   } catch (error) {
     console.error("An error occurred:", error);
     return { streamingLink: [], servers: [] };

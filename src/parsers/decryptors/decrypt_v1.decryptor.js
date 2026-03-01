@@ -60,6 +60,7 @@ export async function decryptSources_v1(epID, id, name, type, fallback) {
   try {
     let decryptedSources = null;
     let iframeURL = null;
+    let ajaxLink = null;
 
     if (fallback) {
       const fallback_server = ["hd-1", "hd-3"].includes(name.toLowerCase())
@@ -90,41 +91,46 @@ export async function decryptSources_v1(epID, id, name, type, fallback) {
       decryptedSources = decryptedData;
     } else {
       const { data: sourcesData } = await axios.get(
-        `https://${v1_base_url}/ajax/v2/episode/sources?id=${id}`,
-      );
-
-      const ajaxLink = sourcesData?.link;
-      if (!ajaxLink) throw new Error("Missing link in sourcesData");
-      console.log(ajaxLink);
-      const sourceIdMatch = /\/([^/?]+)\?/.exec(ajaxLink);
-      const sourceId = sourceIdMatch?.[1];
-      if (!sourceId) throw new Error("Unable to extract sourceId from link");
-      const new_url = `https://megacloud.blog/embed-2/v3/e-1/${sourceId}?k=1`;
-      const { data: stream_data } = await axios.post(
-        "https://megacloud.zenime.site/get-sources",
-        {
-          embedUrl: new_url,
-        },
+        `https://${v4_base_url}/ajax/episode/sources?id=${id}`,
         {
           headers: {
-            "Content-Type": "application/json",
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
           },
         },
       );
 
-      decryptedSources = stream_data;
-      // const baseUrlMatch = ajaxLink.match(
-      //   /^(https?:\/\/[^\/]+(?:\/[^\/]+){3})/,
-      // );
-      // if (!baseUrlMatch) throw new Error("Could not extract base URL");
-      // const baseUrl = baseUrlMatch[1];
+      ajaxLink = sourcesData?.link;
+      if (!ajaxLink) throw new Error("Missing link in sourcesData");
+      iframeURL = ajaxLink;
 
-      // iframeURL = `${baseUrl}/${sourceId}?k=1&autoPlay=0&oa=0&asi=1`;
+      const sourceIdMatch = /\/([^/?]+)\?/.exec(ajaxLink);
+      const sourceId = sourceIdMatch?.[1];
+      if (!sourceId) throw new Error("Unable to extract sourceId from link");
 
-      // const { data: rawSourceData } = await axios.get(
-      //   `${baseUrl}/getSources?id=${sourceId}`,
-      // );
-      // decryptedSources = rawSourceData;
+      const baseUrlMatch = ajaxLink.match(/^(https?:\/\/[^\/]+(?:\/[^\/]+){3})/);
+      if (!baseUrlMatch) throw new Error("Could not extract base URL");
+      const baseUrl = baseUrlMatch[1];
+
+      const sourcesUrl = `${baseUrl}/getSources?id=${sourceId}`;
+
+      const { data: directData } = await axios.get(sourcesUrl, {
+        headers: {
+          Accept: "*/*",
+          "X-Requested-With": "XMLHttpRequest",
+          Referer: `${ajaxLink}&autoPlay=1&oa=0&asi=1`,
+          "Accept-Language": "en-US,en;q=0.9",
+          "Accept-Encoding": "gzip, deflate, br",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+          Origin: baseUrl.match(/^https?:\/\/[^\/]+/)[0],
+          "Sec-Fetch-Dest": "empty",
+          "Sec-Fetch-Mode": "cors",
+          "Sec-Fetch-Site": "same-origin",
+        },
+      });
+
+      decryptedSources = directData;
     }
 
     return {
@@ -133,7 +139,9 @@ export async function decryptSources_v1(epID, id, name, type, fallback) {
       link: {
         file: fallback
           ? (decryptedSources?.sources?.file ?? "")
-          : (decryptedSources?.sources?.[0].file ?? ""),
+          : (Array.isArray(decryptedSources?.sources)
+            ? (decryptedSources?.sources?.[0]?.file ?? "")
+            : (typeof decryptedSources?.sources === "object" ? (decryptedSources?.sources?.file ?? "") : "")),
         type: "hls",
       },
       tracks: decryptedSources.tracks ?? [],
@@ -145,7 +153,7 @@ export async function decryptSources_v1(epID, id, name, type, fallback) {
   } catch (error) {
     console.error(
       `Error during decryptSources_v1(${id}, epID=${epID}, server=${name}):`,
-      error.message,
+      error.response ? `${error.response.status} - ${error.response.statusText}` : error.message,
     );
     return null;
   }
