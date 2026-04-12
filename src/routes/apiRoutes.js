@@ -20,6 +20,7 @@ import getVoiceActors from "../controllers/actors.controller.js";
 import getCharacter from "../controllers/characters.controller.js";
 import * as filterController from "../controllers/filter.controller.js";
 import getTopSearch from "../controllers/topsearch.controller.js";
+import { proxyAniList } from "../controllers/anilist.controller.js";
 
 export const createApiRoutes = (app, jsonResponse, jsonError) => {
   const createRoute = (path, controllerMethod) => {
@@ -86,4 +87,16 @@ export const createApiRoutes = (app, jsonResponse, jsonError) => {
   createRoute("/api/actors/:id", getVoiceActors);
   createRoute("/api/character/:id", getCharacter);
   createRoute("/api/top-search", getTopSearch);
+
+  // AniList proxy — raw GraphQL response, no wrapping
+  app.post("/api/anilist", async (req, res) => {
+    try {
+      await proxyAniList(req, res);
+    } catch (err) {
+      console.error("Error in /api/anilist:", err);
+      if (!res.headersSent) {
+        return jsonError(res, err.message || "Internal server error");
+      }
+    }
+  });
 };
