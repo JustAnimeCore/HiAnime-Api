@@ -2,6 +2,7 @@ import axios from "axios";
 import * as cheerio from "cheerio";
 import { DEFAULT_HEADERS } from "../configs/header.config.js";
 import { v1_base_url } from "../utils/base_v1.js";
+import { httpsAgent } from "../utils/httpAgent.js";
 import {
   FILTER_LANGUAGE_MAP,
   GENRE_MAP,
@@ -92,6 +93,8 @@ async function extractFilterResults(params = {}) {
         "Accept-Encoding": "gzip, deflate, br",
         "User-Agent": DEFAULT_HEADERS,
       },
+      httpsAgent,
+      timeout: 30000,
     });
 
     const $ = cheerio.load(resp.data);

@@ -18,7 +18,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",");
 app.use(
   cors({
     origin: allowedOrigins?.includes("*") ? "*" : allowedOrigins || [],
-    methods: ["GET"],
+    methods: ["GET", "POST"],
   })
 );
 
@@ -31,7 +31,7 @@ app.use((req, res, next) => {
     (origin && allowedOrigins.includes(origin))
   ) {
     res.setHeader("Access-Control-Allow-Origin", origin || "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     return next();
   }
@@ -40,6 +40,7 @@ app.use((req, res, next) => {
     .json({ success: false, message: "Forbidden: Origin not allowed" });
 });
 
+app.use(express.json());
 app.use(express.static(publicDir, { redirect: false }));
 
 const jsonResponse = (res, data, status = 200) =>

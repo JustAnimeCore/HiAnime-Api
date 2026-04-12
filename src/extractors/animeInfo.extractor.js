@@ -2,6 +2,7 @@ import axios from "axios";
 import * as cheerio from "cheerio";
 import formatTitle from "../helper/formatTitle.helper.js";
 import { v1_base_url } from "../utils/base_v1.js";
+import { axiosConfig } from "../utils/httpAgent.js";
 import extractRecommendedData from "./recommend.extractor.js";
 import extractRelatedData from "./related.extractor.js";
 import extractPopularData from "./popular.extractor.js";
@@ -9,9 +10,10 @@ import extractPopularData from "./popular.extractor.js";
 async function extractAnimeInfo(id) {
   try {
     const [resp, characterData] = await Promise.all([
-      axios.get(`https://${v1_base_url}/${id}`),
+      axios.get(`https://${v1_base_url}/${id}`, axiosConfig),
       axios.get(
-        `https://${v1_base_url}/ajax/character/list/${id.split("-").pop()}`
+        `https://${v1_base_url}/ajax/character/list/${id.split("-").pop()}`,
+        axiosConfig
       ),
     ]);
     const characterHtml = characterData.data?.html || "";
