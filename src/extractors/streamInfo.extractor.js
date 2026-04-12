@@ -22,14 +22,9 @@ export async function extractServers(id) {
       }
     }
     
-    // Extract episode number if present (format: "anime-id?ep=123")
-    const epMatch = cleanId.match(/ep=(\d+)/);
-    const episodeNum = epMatch ? epMatch[1] : cleanId;
-    
-    // Use the format the anime site expects
-    const apiId = episodeNum;
-    const encodedId = encodeURIComponent(apiId);
-    console.log("[extractServers] original:", id, "cleanId:", cleanId, "episodeNum:", episodeNum, "encodedId:", encodedId);
+    // Use the cleaned full ID for the API call
+    const encodedId = encodeURIComponent(cleanId);
+    console.log("[extractServers] original:", id, "cleanId:", cleanId, "encodedId:", encodedId);
     console.log("[extractServers] Requesting URL:", `https://${v1_base_url}/ajax/v2/episode/servers?episodeId=${encodedId}`);
     
     const httpsAgent = new HttpsAgent({ rejectUnauthorized: false });
