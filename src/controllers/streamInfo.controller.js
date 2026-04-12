@@ -7,10 +7,15 @@ export const getStreamInfo = async (req, res, fallback = false) => {
     const type = req.query.type;
     const ep = req.query.ep;
 
-    let finalId = ep || input?.match(/ep=(\d+)/)?.[1] || input;
+    let finalId = ep;
+    if (!finalId && input) {
+      const decoded = decodeURIComponent(input);
+      finalId = decoded.match(/ep=(\d+)/)?.[1] || decoded;
+    }
 
     if (!finalId) throw new Error("Invalid URL format: episode ID missing");
 
+    console.log("[getStreamInfo] input:", input, "finalId:", finalId);
     const streamingInfo = await extractStreamingInfo(finalId, server, type, fallback);
     return streamingInfo;
   } catch (e) {

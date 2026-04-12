@@ -40,6 +40,7 @@ app.use((req, res, next) => {
     .json({ success: false, message: "Forbidden: Origin not allowed" });
 });
 
+app.use(express.json());
 app.use(express.static(publicDir, { redirect: false }));
 
 const jsonResponse = (res, data, status = 200) =>

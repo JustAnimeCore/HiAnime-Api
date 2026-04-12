@@ -1,10 +1,11 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import { v1_base_url } from "../utils/base_v1.js";
+import { axiosConfig } from "../utils/httpAgent.js";
 
 export async function extractVoiceActor(id) {
   try {
-    const response = await axios.get(`https://${v1_base_url}/people/${id}`);
+    const response = await axios.get(`https://${v1_base_url}/people/${id}`, axiosConfig);
     const $ = cheerio.load(response.data);
 
     // Extract basic information

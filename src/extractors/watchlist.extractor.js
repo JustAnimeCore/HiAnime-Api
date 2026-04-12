@@ -1,11 +1,12 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import { v1_base_url } from "../utils/base_v1.js";
+import { axiosConfig } from "../utils/httpAgent.js";
 
 export default async function extractWatchlist(userId, page = 1) {
   try {
     const url = `https://${v1_base_url}/community/user/${userId}/watch-list?page=${page}`;
-    const { data } = await axios.get(url);
+    const { data } = await axios.get(url, axiosConfig);
     const $ = cheerio.load(data);
     const watchlist = [];
 

@@ -1,6 +1,7 @@
 import axios from "axios";
 import CryptoJS from "crypto-js";
 import * as cheerio from "cheerio";
+import { Agent as HttpsAgent } from "node:https";
 import { v1_base_url } from "../../utils/base_v1.js";
 import { v4_base_url } from "../../utils/base_v4.js";
 import { fallback_1, fallback_2 } from "../../utils/fallback.js";
@@ -69,12 +70,14 @@ export async function decryptSources_v1(epID, id, name, type, fallback) {
 
       iframeURL = `https://${fallback_server}/stream/s-2/${epID}/${type}`;
 
+      const httpsAgent = new HttpsAgent({ rejectUnauthorized: false });
       const { data } = await axios.get(
         `https://${fallback_server}/stream/s-2/${epID}/${type}`,
         {
           headers: {
             Referer: `https://${fallback_server}/`,
           },
+          httpsAgent,
         },
       );
 
@@ -86,10 +89,12 @@ export async function decryptSources_v1(epID, id, name, type, fallback) {
           headers: {
             "X-Requested-With": "XMLHttpRequest",
           },
+          httpsAgent,
         },
       );
       decryptedSources = decryptedData;
     } else {
+      const httpsAgent = new (require('https').Agent)({ rejectUnauthorized: false });
       const { data: sourcesData } = await axios.get(
         `https://${v4_base_url}/ajax/episode/sources?id=${id}`,
         {
@@ -97,6 +102,7 @@ export async function decryptSources_v1(epID, id, name, type, fallback) {
             "User-Agent":
               "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
           },
+          httpsAgent,
         },
       );
 
@@ -128,6 +134,7 @@ export async function decryptSources_v1(epID, id, name, type, fallback) {
           "Sec-Fetch-Mode": "cors",
           "Sec-Fetch-Site": "same-origin",
         },
+        httpsAgent,
       });
 
       decryptedSources = directData;

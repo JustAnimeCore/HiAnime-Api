@@ -1,5 +1,6 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
+import { Agent as HttpsAgent } from "node:https";
 import { v1_base_url } from "../utils/base_v1.js";
 // import decryptMegacloud from "../parsers/decryptors/megacloud.decryptor.js";
 // import AniplayExtractor from "../parsers/aniplay.parser.js";
@@ -7,10 +8,49 @@ import { decryptSources_v1 } from "../parsers/decryptors/decrypt_v1.decryptor.js
 
 export async function extractServers(id) {
   try {
+    // Handle both encoded and decoded IDs, being defensive about double encoding
+    let cleanId = id;
+    
+    // Try to decode - handle potential double encoding by looping
+    for (let i = 0; i < 3; i++) {
+      try {
+        const decoded = decodeURIComponent(cleanId);
+        if (decoded === cleanId) break;
+        cleanId = decoded;
+      } catch {
+        break;
+      }
+    }
+    
+    // Extract episode number if present (format: "anime-id?ep=123")
+    const epMatch = cleanId.match(/ep=(\d+)/);
+    const episodeNum = epMatch ? epMatch[1] : cleanId;
+    
+    // Use the format the anime site expects
+    const apiId = episodeNum;
+    const encodedId = encodeURIComponent(apiId);
+    console.log("[extractServers] original:", id, "cleanId:", cleanId, "episodeNum:", episodeNum, "encodedId:", encodedId);
+    console.log("[extractServers] Requesting URL:", `https://${v1_base_url}/ajax/v2/episode/servers?episodeId=${encodedId}`);
+    
+    const httpsAgent = new HttpsAgent({ rejectUnauthorized: false });
     const resp = await axios.get(
-      `https://${v1_base_url}/ajax/v2/episode/servers?episodeId=${id}`
+      `https://${v1_base_url}/ajax/v2/episode/servers?episodeId=${encodedId}`,
+      { httpsAgent }
     );
-    const $ = cheerio.load(resp.data.html);
+    console.log("[extractServers] Response status:", resp.status);
+    console.log("[extractServers] Response data type:", typeof resp.data);
+    console.log("[extractServers] Response data:", JSON.stringify(resp.data).substring(0, 500));
+    
+    // Handle different response formats
+    let htmlContent = '';
+    if (typeof resp.data === 'string') {
+      htmlContent = resp.data;
+    } else if (resp.data && typeof resp.data === 'object') {
+      // Could be { html: '...' } or some other structure
+      htmlContent = resp.data.html || resp.data;
+    }
+    
+    const $ = cheerio.load(htmlContent);
     const serverData = [];
     $(".server-item").each((index, element) => {
       const data_id = $(element).attr("data-id");

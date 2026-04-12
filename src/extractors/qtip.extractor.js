@@ -1,6 +1,7 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import { v1_base_url } from "../utils/base_v1.js";
+import { httpsAgent } from "../utils/httpAgent.js";
 
 export default async function extractQtip(id) {
   try {
@@ -10,6 +11,8 @@ export default async function extractQtip(id) {
         headers: {
           "x-requested-with": "XMLHttpRequest",
         },
+        httpsAgent,
+        timeout: 30000,
       }
     );
     const $ = cheerio.load(data);

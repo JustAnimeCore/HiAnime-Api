@@ -1,10 +1,11 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import { v1_base_url } from "../utils/base_v1.js";
+import { axiosConfig } from "../utils/httpAgent.js";
 
 export default async function extractNextEpisodeSchedule(id) {
   try {
-    const { data } = await axios.get(`https://${v1_base_url}/watch/${id}`);
+    const { data } = await axios.get(`https://${v1_base_url}/watch/${id}`, axiosConfig);
     const $ = cheerio.load(data);
     const nextEpisodeSchedule = $(
       ".schedule-alert > .alert.small > span:last"
